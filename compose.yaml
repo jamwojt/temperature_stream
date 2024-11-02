@@ -1,0 +1,70 @@
+services:
+  # postgres:
+  #   image: postgres:15
+  #   ports:
+  #     - 5432:5432
+  #   environment:
+  #     POSTGRES_USER: $POSTGRES_USER
+  #     POSGRES_PASSWORD: $POSTGRES_PASSWORD
+  #     POSTGRES_DATABASE: $POSTGRES_DATABASE
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #     - ./init:/docker-entrypoint/initdb.d/
+  #   networks:
+  #     - stream_network
+
+  # api:
+  #   build:
+  #     context: ./stream_api
+  #   ports:
+  #     - 8000:8000
+  #   environment:
+  #     KAFKA_LISTENING_PORT: $KAFKA_LISTENING_PORT
+  #     networks:
+  #     - stream_network
+  #   depends_on:
+  #     - postgres
+  #     - kafka
+
+  spark:
+    build:
+      context: ./spark_stream
+    environment:
+      POSTGRES_USER: $POSTGRES_USER
+      POSGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DATABASE: $POSTGRES_DATABASE
+    networks:
+      - stream_network
+    depends_on:
+      - kafka
+      # - postgres
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:6.2.0
+    hostname: zookeeper
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - stream_network
+
+  kafka:
+    image: confluentinc/cp-kafka:6.2.0
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    networks:
+      - stream_network
+    depends_on:
+      - zookeeper
+
+networks:
+  stream_network:
