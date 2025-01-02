@@ -1,0 +1,42 @@
+import datetime
+import json
+
+import requests
+from fastapi import FastAPI
+
+
+app = FastAPI()
+
+kafka_broker = "kafka:29092"
+kafka_topic = "sensor_queue"
+
+kafka_conf = {"bootstrap.servers": kafka_broker}
+
+producer = Producer(kafka_conf)
+
+
+def delivery_report(err, msg):
+    if err is not None:
+        print(f"error: {err}")
+    else:
+        print(f"message sent: {msg}")
+
+
+@app.get("/")
+def home():
+    greet = {"hello": 5}
+    return greet
+
+
+@app.post("/pass-data/{temp}/{hum}")
+def pass_data(temp, hum):
+    url = f"http://localhost:8082/topics/{kafka_topic}"
+    headers = {"Content-Type": "application/vnd.kafka.json.v2+json"}
+    data = {"temp": temp, "humidity": hum}
+
+    requests.post(url=url, headers=headers, data=data)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="api", port=8000)

@@ -1,14 +1,12 @@
-import datetime
-import json
-
-import redis
 from fastapi import FastAPI
-
-
-redis_db = redis.Redis(host="redis", port=6379, db=0)
+from kafka import KafkaProducer
+import time
 
 
 app = FastAPI()
+
+kafka_broker = "kafka:9999"
+kafka_topic = "sensor_queue"
 
 
 @app.get("/")
@@ -18,12 +16,27 @@ def home():
 
 
 @app.post("/pass-data/{temp}/{hum}")
-def pass_data(temp, hum):
-    data = {"datetime": str(datetime.datetime.now()), "temp": temp, "hum": hum}
-    redis_db.xadd("requests", data)
+def pass_data(temp: float, hum: float):
+    data = {"temperature": float(temp), "humidity": float(hum)}
+    kafka_producer.send(topic=kafka_topic, value=data)
 
 
 if __name__ == "__main__":
     import uvicorn
+
+    connected = False
+    connecting_time = 0
+
+    while connecting_time <= 60 and not connected:
+        try:
+            kafka_producer = KafkaProducer(bootstrap_servers=kafka_broker)
+            print("connected to the kafka broker")
+            connected = True
+        except:
+            connected += 2
+            time.sleep(2)
+
+    if connecting_time > 60:
+        print("couldn't connect with kafka broker")
 
     uvicorn.run(app, host="api", port=8000)

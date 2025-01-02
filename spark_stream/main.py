@@ -1,20 +1,9 @@
 import logging
+import time
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import ByteType, StringType, StructField, StructType
-
-
-# def get_logger(name: str, log_level):
-#     logger = logging.getLogger(name)
-#     logger.setLevel(logging.DEBUG)
-#
-#     handler = logging.StreamHandler()
-#     handler.setLevel(log_level)
-#
-#     logger.addHandler(handler)
-#
-#     return logger
 
 
 spark = (
@@ -23,7 +12,7 @@ spark = (
     .getOrCreate()
 )
 
-kafka_broker = "kafka:29092"
+kafka_broker = "kafka:9092"
 
 
 listener_df = (
@@ -39,7 +28,12 @@ transform_df = listener_df.selectExpr(
     "CAST(key AS STRING)", "CAST(value AS STRING)", "timestamp"
 )
 
-transform_df.writeStream.format("console").outputMode("append").start()
+transform_df\
+    .writeStream\
+    .outputMode("append")\
+    .format("console")\
+    .start()
 
+print("sleeping")
+time.sleep(60)
 
-transform_df.awaitTermination()
