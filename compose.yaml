@@ -54,15 +54,16 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      # KAFKA_PROESS_ROLES: broker,controller
-      # KAFKA_CONTROLLER_QUORUM_VOTES: 1@localhost:9093
-      # KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      # KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      # KAFKA_REST_HOST_NAME: kafka-rest
-      # KAFKA_REST_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
-      # KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+      KAFKA_AUTO_CREATE_TOPICS: 'true'
+    volumes:
+      - ./create_kafka_topic.sh:/create_kafka_topic.sh
+    command: >
+      sh -c "
+      /etc/confluent/docker/run &
+      sleep 3 &&
+      bash /create_kafka_topic.sh &&
+      wait
+      "
     networks:
       - stream_network
     depends_on:

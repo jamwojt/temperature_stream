@@ -5,9 +5,24 @@ import time
 
 app = FastAPI()
 
-kafka_broker = "kafka:9999"
+kafka_broker = "kafka:9092"
 kafka_topic = "sensor_queue"
 
+connected = False
+connecting_time = 0
+
+while connecting_time <= 60 and not connected:
+    try:
+        print(f"connecting to kafka... ({connecting_time})")
+        kafka_producer = KafkaProducer(bootstrap_servers=kafka_broker)
+        print("connected to the kafka broker")
+        connected = True
+    except:
+        connected += 2
+        time.sleep(2)
+
+if connecting_time > 60:
+    print("couldn't connect with kafka broker")
 
 @app.get("/")
 def home():
@@ -23,20 +38,5 @@ def pass_data(temp: float, hum: float):
 
 if __name__ == "__main__":
     import uvicorn
-
-    connected = False
-    connecting_time = 0
-
-    while connecting_time <= 60 and not connected:
-        try:
-            kafka_producer = KafkaProducer(bootstrap_servers=kafka_broker)
-            print("connected to the kafka broker")
-            connected = True
-        except:
-            connected += 2
-            time.sleep(2)
-
-    if connecting_time > 60:
-        print("couldn't connect with kafka broker")
 
     uvicorn.run(app, host="api", port=8000)
