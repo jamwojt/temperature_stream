@@ -1,2 +1,3 @@
 pyspark
 redis
+kafka-python
